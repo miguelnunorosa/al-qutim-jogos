@@ -1,0 +1,6 @@
+# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+# to allow web crawlers access to your site. The file is located at the root of your
+# next to site's main directory.
+
+User-agent: *
+Disallow:

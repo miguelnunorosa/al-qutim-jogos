@@ -1,0 +1,71 @@
+/* Resetando margens e padding */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Estilo para o body */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f6f8; /* Cor de fundo suave */
+}
+
+/* Container para o formulário */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Formulário de login */
+.login-form {
+  background-color: #fff;
+  padding: 40px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Logo do clube */
+.login-logo img {
+  width: 120px;  /* Tamanho do logo */
+  margin-bottom: 20px;
+}
+
+/* Estilo para o campo de texto */
+.MuiTextField-root {
+  margin-bottom: 15px;
+}
+
+/* Estilo do botão de login */
+.MuiButton-root {
+  margin-top: 20px;
+}
+
+/* Links para memorizar login e recuperar senha */
+.links-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.links-container a {
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.links-container a:hover {
+  text-decoration: underline;
+}
+
+/* Estilo para a mensagem de erro */
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+  margin-top: 10px;
+}

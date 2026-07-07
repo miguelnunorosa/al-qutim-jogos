@@ -1,0 +1,19 @@
+services:
+  react-dev:
+    build: .
+    container_name: al-qutim-jogos-react-dashboard
+    ports:
+      - "11006:3000"
+    volumes:
+      # Montar o código fonte para hot reload
+      - .:/app
+      # Excluir node_modules do volume para evitar conflitos
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+      - REACT_APP_ENV=development
+    stdin_open: true
+    tty: true
+    command: npm start
