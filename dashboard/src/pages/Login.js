@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Checkbox, FormControlLabel, Link } from '@mui/material';
 import '../styles/login.css'; // Importe o arquivo CSS para estilização
 
@@ -10,6 +11,7 @@ const Login = () => {
   const [senha, setSenha] = useState('');
   const [rememberMe, setRememberMe] = useState(false); // Para "Memorizar login"
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -21,6 +23,8 @@ const Login = () => {
       setError('');
       console.log('Login bem-sucedido', email, senha, rememberMe);
       // Aqui você pode integrar com a API de login
+
+      navigate('/dashboard'); // ← redireciona para a dashboard DEMO ONLY!!
     }
   };
 
