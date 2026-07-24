@@ -4,11 +4,13 @@ import { Box, Grid, Card, Typography, Chip, Stack, CircularProgress, Alert } fro
 import { db } from '../firebase';
 import GeometricMark from '../theme/GeometricMark';
 import EmptyState from '../components/EmptyState';
+import EditJogoDialog from '../components/EditJogoDialog';
 
 export default function Jogos() {
     const [jogos, setJogos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedJogo, setSelectedJogo] = useState(null);
 
     useEffect(() => {
         const q = query(collection(db, 'jogos'), orderBy('ordem'));
@@ -61,14 +63,28 @@ export default function Jogos() {
                         const texto = jogo.traducoes?.pt ?? {};
                         return (
                             <Grid item xs={12} sm={6} lg={4} key={jogo.id}>
-                                <Card sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <Card
+                                    onClick={() => setSelectedJogo(jogo)}
+                                    sx={{
+                                        p: 3,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 2,
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                                        '&:hover': {
+                                            transform: 'translateY(-2px)',
+                                            boxShadow: '0 8px 20px rgba(19,27,51,0.08)',
+                                        },
+                                    }}
+                                >
                                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                                         <GeometricMark size={32} color="#C9973E" />
                                         <Chip
                                             label={jogo.ativo ? 'Ativo' : 'Inativo'}
                                             size="small"
                                             sx={{
-                                                bgcolor: jogo.ativo ? 'rgba(47,184,172,0.14)' : 'rgb(51 19 19 / 0.06)',
+                                                bgcolor: jogo.ativo ? 'rgba(47,184,172,0.14)' : 'rgba(19,27,51,0.06)',
                                                 color: jogo.ativo ? '#1F8177' : 'text.secondary',
                                                 fontWeight: 600,
                                             }}
@@ -86,6 +102,12 @@ export default function Jogos() {
                     })}
                 </Grid>
             )}
+
+            <EditJogoDialog
+                jogo={selectedJogo}
+                open={Boolean(selectedJogo)}
+                onClose={() => setSelectedJogo(null)}
+            />
         </Box>
     );
 }
