@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
     Box,
     Drawer,
@@ -14,8 +14,15 @@ import {
     Avatar,
     Divider,
     useMediaQuery,
+    Menu,
+    MenuItem,
+    ListItemIcon as MenuListItemIcon,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import SpaceDashboardOutlinedIcon from '@mui/icons-material/SpaceDashboardOutlined';
 import CasinoOutlinedIcon from '@mui/icons-material/CasinoOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
@@ -87,7 +94,25 @@ function SidebarContent() {
 
 export default function DashboardLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [menuAnchor, setMenuAnchor] = useState(null);
     const isDesktop = useMediaQuery('(min-width:900px)');
+    const navigate = useNavigate();
+    const { perfil } = useAuth();
+
+    const iniciais = perfil?.nome
+        ? perfil.nome
+            .split(' ')
+            .map((p) => p[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase()
+        : 'AQ';
+
+    const handleLogout = async () => {
+        setMenuAnchor(null);
+        await signOut(auth);
+        navigate('/');
+    };
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -110,9 +135,31 @@ export default function DashboardLayout() {
                         </IconButton>
                     )}
                     <Box sx={{ flexGrow: 1 }} />
-                    <Avatar sx={{ width: 34, height: 34, bgcolor: 'secondary.main', fontSize: 14, fontWeight: 600 }}>
-                        AQ
-                    </Avatar>
+                    <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ p: 0.3 }}>
+                        <Avatar sx={{ width: 34, height: 34, bgcolor: 'secondary.main', fontSize: 14, fontWeight: 600 }}>
+                            {iniciais}
+                        </Avatar>
+                    </IconButton>
+                    <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+                        {perfil?.nome && (
+                            <MenuItem disabled sx={{ opacity: '1 !important' }}>
+                                <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                        {perfil.nome}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {perfil.email}
+                                    </Typography>
+                                </Box>
+                            </MenuItem>
+                        )}
+                        <MenuItem onClick={handleLogout}>
+                            <MenuListItemIcon>
+                                <LogoutIcon fontSize="small" />
+                            </MenuListItemIcon>
+                            Terminar sessão
+                        </MenuItem>
+                    </Menu>
                 </Toolbar>
             </AppBar>
 
