@@ -36,7 +36,6 @@ const NAV_ITEMS = [
     { label: 'Início', to: '/dashboard', icon: SpaceDashboardOutlinedIcon },
     { label: 'Jogos', to: '/dashboard/jogos', icon: CasinoOutlinedIcon },
     { label: 'Utilizadores', to: '/dashboard/utilizadores', icon: GroupOutlinedIcon, roles: ['admin'] },
-    { label: 'Definições', to: '/dashboard/definicoes', icon: SettingsOutlinedIcon },
 ];
 
 function SidebarContent() {
@@ -155,6 +154,17 @@ export default function DashboardLayout() {
                                 </Box>
                             </MenuItem>
                         )}
+                        <MenuItem
+                            onClick={() => {
+                                setMenuAnchor(null);
+                                navigate('/dashboard/definicoes');
+                            }}
+                        >
+                            <MenuListItemIcon>
+                                <SettingsOutlinedIcon fontSize="small" />
+                            </MenuListItemIcon>
+                            Definições
+                        </MenuItem>
                         <MenuItem onClick={handleLogout}>
                             <MenuListItemIcon>
                                 <LogoutIcon fontSize="small" />

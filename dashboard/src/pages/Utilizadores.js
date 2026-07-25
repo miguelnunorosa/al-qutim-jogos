@@ -5,6 +5,7 @@ import {
     Typography,
     Button,
     Table,
+    TableContainer,
     TableHead,
     TableBody,
     TableRow,
@@ -101,64 +102,70 @@ export default function Utilizadores() {
 
             {!loading && !error && utilizadores.length > 0 && (
                 <Paper sx={{ overflow: 'hidden' }}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Nome</TableCell>
-                                <TableCell>Email</TableCell>
-                                <TableCell>Função</TableCell>
-                                <TableCell>Estado</TableCell>
-                                <TableCell>Registo</TableCell>
-                                <TableCell>Último acesso</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {utilizadores.map((u) => (
-                                <TableRow
-                                    key={u.id}
-                                    hover
-                                    onClick={() => openEdit(u)}
-                                    sx={{ cursor: 'pointer' }}
-                                >
-                                    <TableCell sx={{ fontWeight: 600 }}>
-                                        {u.nome}
-                                        {u.id === perfil?.id && (
-                                            <Chip
-                                                label="Tu"
-                                                size="small"
-                                                sx={{ ml: 1, height: 20, fontSize: 11, bgcolor: 'rgba(19,27,51,0.06)' }}
-                                            />
-                                        )}
-                                    </TableCell>
-                                    <TableCell>{u.email}</TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={ROLES[u.role] ?? u.role}
-                                            size="small"
-                                            sx={{
-                                                bgcolor: (ROLE_COLORS[u.role] ?? ROLE_COLORS.jogador).bg,
-                                                color: (ROLE_COLORS[u.role] ?? ROLE_COLORS.jogador).fg,
-                                                fontWeight: 600,
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={u.ativo ? 'Ativo' : 'Inativo'}
-                                            size="small"
-                                            sx={{
-                                                bgcolor: u.ativo ? 'rgba(47,184,172,0.14)' : 'rgba(19,27,51,0.06)',
-                                                color: u.ativo ? '#1F8177' : 'text.secondary',
-                                                fontWeight: 600,
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{formatData(u.dataRegisto)}</TableCell>
-                                    <TableCell>{formatData(u.ultimoAcesso)}</TableCell>
+                    <TableContainer sx={{ overflowX: 'auto' }}>
+                        <Table sx={{ minWidth: 560 }}>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Nome</TableCell>
+                                    <TableCell>Email</TableCell>
+                                    <TableCell>Função</TableCell>
+                                    <TableCell>Estado</TableCell>
+                                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Registo</TableCell>
+                                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Último acesso</TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHead>
+                            <TableBody>
+                                {utilizadores.map((u) => (
+                                    <TableRow
+                                        key={u.id}
+                                        hover
+                                        onClick={() => openEdit(u)}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                            {u.nome}
+                                            {u.id === perfil?.id && (
+                                                <Chip
+                                                    label="Tu"
+                                                    size="small"
+                                                    sx={{ ml: 1, height: 20, fontSize: 11, bgcolor: 'rgba(19,27,51,0.06)' }}
+                                                />
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{u.email}</TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={ROLES[u.role] ?? u.role}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: (ROLE_COLORS[u.role] ?? ROLE_COLORS.jogador).bg,
+                                                    color: (ROLE_COLORS[u.role] ?? ROLE_COLORS.jogador).fg,
+                                                    fontWeight: 600,
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={u.ativo ? 'Ativo' : 'Inativo'}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: u.ativo ? 'rgba(47,184,172,0.14)' : 'rgba(19,27,51,0.06)',
+                                                    color: u.ativo ? '#1F8177' : 'text.secondary',
+                                                    fontWeight: 600,
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                                            {formatData(u.dataRegisto)}
+                                        </TableCell>
+                                        <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                                            {formatData(u.ultimoAcesso)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Paper>
             )}
 
