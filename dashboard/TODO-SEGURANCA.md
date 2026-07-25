@@ -24,7 +24,7 @@ tens de correr:
 ```bash
 node scripts/syncClaims.js
 ```
-(dentro do container Docker, tal como o `../../../Downloads/seedJogos.js`)
+(dentro do container Docker, tal como o `seedJogos.js`)
 
 A pessoa em causa só vê o novo acesso depois de voltar a fazer login (ou
 até 1h depois, quando o token renovar sozinho).
@@ -36,8 +36,13 @@ conteúdo de `firestore.rules` → Publicar.
 
 ## Ainda por fazer (não urgente)
 
-- Automatizar a sincronização de claims (hoje é manual, via script) —
-  candidato natural a uma Cloud Function no futuro, disparada sempre que
-  um documento em `utilizadores` for escrito.
+- ~~Automatizar a sincronização de claims via Cloud Function~~ — **decisão
+  consciente (25/07/2026): não avançar por agora.** Cloud Functions exigem
+  o plano Blaze (pay-as-you-go) e o Firebase CLI instalado localmente,
+  nenhum dos dois estava configurado. Fica o `scripts/syncClaims.js`
+  manual como solução. Se um dia isto mudar (Blaze + CLI prontos), o
+  gatilho ideal é uma Cloud Function `onDocumentWritten` na coleção
+  `utilizadores`, que chama `setCustomUserClaims` automaticamente —
+  reaproveitando a mesma lógica que já está no `syncClaims.js`.
 - Decidir se a coleção `jogos` deve continuar de leitura 100% pública
   quando a app principal também tiver autenticação própria.

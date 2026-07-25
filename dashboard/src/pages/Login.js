@@ -16,10 +16,12 @@ import {
   FormControlLabel,
   Checkbox,
   Alert,
+  Link,
 } from '@mui/material';
 import { auth, db } from '../firebase';
 import logo from '../assets/logo.png';
 import GeometricMark from '../theme/GeometricMark';
+import ForgotPasswordDialog from '../components/ForgotPasswordDialog';
 
 const ERROS_FIREBASE = {
   'auth/invalid-email': 'Email inválido.',
@@ -38,6 +40,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState(location.state?.erro ?? '');
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   // Atualiza o campo "ultimoAcesso" do registo correspondente em "utilizadores"
   // (não bloqueia o login se isto falhar — é só informativo para a dashboard).
@@ -123,17 +126,27 @@ export default function Login() {
                 sx={{ mb: 1 }}
             />
 
-            <FormControlLabel
-                control={
-                  <Checkbox
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      size="small"
-                  />
-                }
-                label={<Typography variant="body2">Lembrar-me</Typography>}
-                sx={{ mb: 1 }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <FormControlLabel
+                  control={
+                    <Checkbox
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        size="small"
+                    />
+                  }
+                  label={<Typography variant="body2">Lembrar-me</Typography>}
+              />
+              <Link
+                  component="button"
+                  type="button"
+                  variant="body2"
+                  onClick={() => setForgotOpen(true)}
+                  sx={{ color: 'secondary.dark', fontWeight: 600 }}
+              >
+                Esqueceu-se da palavra-passe?
+              </Link>
+            </Box>
 
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -150,6 +163,8 @@ export default function Login() {
             <GeometricMark size={26} color="#131B33" />
           </Box>
         </Card>
+
+        <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} />
       </Box>
   );
 }
