@@ -1,37 +1,40 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
+import { AuthProvider } from './contexts/AuthContext';
 
 import Login from './pages/Login';
+import RequireAuth from './components/RequireAuth';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Jogos from './pages/Jogos';
 import Utilizadores from './pages/Utilizadores';
 import Definicoes from './pages/Definicoes';
-
-// TODO: quando o Login estiver ligado ao Firebase Auth, envolver as rotas
-// de /dashboard/* num <RequireAuth> que redireciona para "/" se não houver
-// utilizador autenticado.
+import NotFound from './pages/NotFound';
 
 function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<Login />} />
+            <AuthProvider>
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/" element={<Login />} />
 
-                    <Route path="/dashboard" element={<DashboardLayout />}>
-                        <Route index element={<Dashboard />} />
-                        <Route path="jogos" element={<Jogos />} />
-                        <Route path="utilizadores" element={<Utilizadores />} />
-                        <Route path="definicoes" element={<Definicoes />} />
-                    </Route>
+                        <Route element={<RequireAuth />}>
+                            <Route path="/dashboard" element={<DashboardLayout />}>
+                                <Route index element={<Dashboard />} />
+                                <Route path="jogos" element={<Jogos />} />
+                                <Route path="utilizadores" element={<Utilizadores />} />
+                                <Route path="definicoes" element={<Definicoes />} />
+                            </Route>
+                        </Route>
 
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-            </BrowserRouter>
+                        <Route path="*" element={<NotFound />} />
+                    </Routes>
+                </BrowserRouter>
+            </AuthProvider>
         </ThemeProvider>
     );
 }
