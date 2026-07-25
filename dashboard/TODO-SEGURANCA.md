@@ -3,12 +3,20 @@
 ## ✅ Já feito
 
 - `jogos`: escrita só para `admin` / `gestor_conteudo` autenticados (via custom claim `role`)
-- `utilizadores`: leitura só para autenticados; escrita normal só para `admin`;
-  exceção para o campo `ultimoAcesso`, que qualquer autenticado pode atualizar
-  (é o que o Login usa)
+- `utilizadores`: leitura — `admin` lê a coleção toda; `gestor_conteudo` (e
+  qualquer outro autenticado) só lê o **próprio** documento, por email;
+  escrita normal só para `admin`; exceção para o campo `ultimoAcesso`, que
+  qualquer autenticado pode atualizar no seu próprio registo (é o que o
+  Login usa)
 - `RequireAuth` bloqueia quem não tem `role: admin` ou `role: gestor_conteudo`
   (utilizadores com `role: jogador` fazem login mas são expulsos de volta ao "/")
 - Todas as coleções não listadas ficam bloqueadas por omissão
+- Proteção contra auto-bloqueio: ninguém pode mudar a própria função, desativar-se
+  ou apagar-se a si próprio pela dashboard
+- Proteção do último Administrador: não é possível mudar o `role` nem desativar
+  nem apagar o único utilizador com `role: admin` existente no sistema
+- Página "Utilizadores" (e o link no menu) só visível/acessível a `admin` —
+  Gestor de Conteúdo não a vê nem consegue lá entrar pelo URL
 
 ## ⚠️ Manutenção contínua — não esquecer
 

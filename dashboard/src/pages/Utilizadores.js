@@ -18,6 +18,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { db } from '../firebase';
 import EmptyState from '../components/EmptyState';
 import EditUtilizadorDialog, { ROLES } from '../components/EditUtilizadorDialog';
+import { useAuth } from '../contexts/AuthContext';
 
 const ROLE_COLORS = {
     admin: { bg: 'rgba(201,151,62,0.16)', fg: '#9C6B2A' },
@@ -26,6 +27,7 @@ const ROLE_COLORS = {
 };
 
 export default function Utilizadores() {
+    const { perfil } = useAuth();
     const [utilizadores, setUtilizadores] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -118,7 +120,16 @@ export default function Utilizadores() {
                                     onClick={() => openEdit(u)}
                                     sx={{ cursor: 'pointer' }}
                                 >
-                                    <TableCell sx={{ fontWeight: 600 }}>{u.nome}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>
+                                        {u.nome}
+                                        {u.id === perfil?.id && (
+                                            <Chip
+                                                label="Tu"
+                                                size="small"
+                                                sx={{ ml: 1, height: 20, fontSize: 11, bgcolor: 'rgba(19,27,51,0.06)' }}
+                                            />
+                                        )}
+                                    </TableCell>
                                     <TableCell>{u.email}</TableCell>
                                     <TableCell>
                                         <Chip

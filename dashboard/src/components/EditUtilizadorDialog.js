@@ -1,5 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { doc, addDoc, updateDoc, deleteDoc, collection, serverTimestamp, query, where, limit, getDocs } from 'firebase/firestore';
+import {
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    collection,
+    serverTimestamp,
+    query,
+    where,
+    limit,
+    getDocs,
+    getCountFromServer,
+} from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
     Dialog,
@@ -16,6 +28,7 @@ import {
     Typography,
 } from '@mui/material';
 import { db, secondaryAuth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 const emptyForm = { nome: '', email: '', role: 'jogador', ativo: true, password: '' };
 
@@ -31,13 +44,22 @@ const ERROS_CRIACAO = {
     'auth/weak-password': 'A palavra-passe tem de ter pelo menos 6 caracteres.',
 };
 
+// Verifica se "utilizador" é atualmente o único com role "admin".
+async function isUltimoAdmin(utilizador) {
+    if (!utilizador || utilizador.role !== 'admin') return false;
+    const snap = await getCountFromServer(query(collection(db, 'utilizadores'), where('role', '==', 'admin')));
+    return snap.data().count <= 1;
+}
+
 // utilizador === null -> modo criação. utilizador === {id, ...} -> modo edição.
 export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
+    const { perfil } = useAuth();
     const [form, setForm] = useState(emptyForm);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
     const isEdit = Boolean(utilizador);
+    const isSelf = isEdit && perfil?.id === utilizador.id;
 
     useEffect(() => {
         if (open) {
@@ -89,6 +111,16 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             }
 
             if (isEdit) {
+                // Protege o último Administrador: não deixa tirar-lhe o role nem
+                // desativá-lo, para nunca ficar ninguém com acesso à dashboard.
+                if (utilizador.role === 'admin' && (form.role !== 'admin' || !form.ativo)) {
+                    if (await isUltimoAdmin(utilizador)) {
+                        setError('Este é o único Administrador — não podes mudar o role nem desativá-lo.');
+                        setSaving(false);
+                        return;
+                    }
+                }
+
                 const payload = {
                     nome: form.nome,
                     email: emailNormalizado,
@@ -142,9 +174,16 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
     };
 
     const handleDelete = async () => {
-        if (!window.confirm(`Remover "${form.nome}"? Esta ação não pode ser desfeita.`)) return;
-        setSaving(true);
         setError(null);
+
+        if (await isUltimoAdmin(utilizador)) {
+            setError('Não é possível remover o único Administrador do sistema.');
+            return;
+        }
+
+        if (!window.confirm(`Remover "${form.nome}"? Esta ação não pode ser desfeita.`)) return;
+
+        setSaving(true);
         try {
             await deleteDoc(doc(db, 'utilizadores', utilizador.id));
             onClose();
@@ -175,17 +214,31 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                         />
                     )}
 
-                    <TextField label="Função" select value={form.role} onChange={handleChange('role')} fullWidth>
+                    <TextField
+                        label="Função"
+                        select
+                        value={form.role}
+                        onChange={handleChange('role')}
+                        fullWidth
+                        disabled={isSelf}
+                        helperText={isSelf ? 'Não podes mudar a tua própria função.' : ' '}
+                    >
                         {Object.entries(ROLES).map(([value, label]) => (
                             <MenuItem key={value} value={value}>
                                 {label}
                             </MenuItem>
                         ))}
                     </TextField>
+
                     <FormControlLabel
-                        control={<Switch checked={form.ativo} onChange={handleChange('ativo')} />}
+                        control={<Switch checked={form.ativo} onChange={handleChange('ativo')} disabled={isSelf} />}
                         label="Ativo"
                     />
+                    {isSelf && (
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: -1.5 }}>
+                            Não podes desativar a tua própria conta.
+                        </Typography>
+                    )}
 
                     {!isEdit && (form.role === 'admin' || form.role === 'gestor_conteudo') && (
                         <Typography variant="caption" color="text.secondary">
@@ -203,7 +256,7 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             </DialogContent>
 
             <DialogActions sx={{ px: 3, py: 2 }}>
-                {isEdit && (
+                {isEdit && !isSelf && (
                     <Button onClick={handleDelete} color="error" disabled={saving} sx={{ mr: 'auto' }}>
                         Remover
                     </Button>
