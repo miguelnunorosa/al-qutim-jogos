@@ -61,13 +61,15 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
         setError(null);
         try {
             if (isEdit) {
-                await updateDoc(doc(db, 'utilizadores', utilizador.id), {
+                const payload = {
                     nome: form.nome,
                     email: form.email,
                     role: form.role,
                     ativo: form.ativo,
                     dataRegisto: utilizador.dataRegisto,
-                });
+                };
+                if (utilizador.ultimoAcesso) payload.ultimoAcesso = utilizador.ultimoAcesso;
+                await updateDoc(doc(db, 'utilizadores', utilizador.id), payload);
             } else {
                 await addDoc(collection(db, 'utilizadores'), {
                     nome: form.nome,
@@ -75,6 +77,7 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                     role: form.role,
                     ativo: form.ativo,
                     dataRegisto: serverTimestamp(),
+                    ultimoAcesso: null,
                 });
             }
             onClose();

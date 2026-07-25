@@ -107,6 +107,7 @@ export default function Utilizadores() {
                                 <TableCell>Função</TableCell>
                                 <TableCell>Estado</TableCell>
                                 <TableCell>Registo</TableCell>
+                                <TableCell>Último acesso</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -142,6 +143,7 @@ export default function Utilizadores() {
                                         />
                                     </TableCell>
                                     <TableCell>{formatData(u.dataRegisto)}</TableCell>
+                                    <TableCell>{formatData(u.ultimoAcesso)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

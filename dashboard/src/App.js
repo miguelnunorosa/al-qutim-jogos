@@ -13,6 +13,10 @@ import Definicoes from './pages/Definicoes';
 // TODO: quando o Login estiver ligado ao Firebase Auth, envolver as rotas
 // de /dashboard/* num <RequireAuth> que redireciona para "/" se não houver
 // utilizador autenticado.
+//
+// TODO: no sucesso do login, atualizar updateDoc(doc(db,'utilizadores', uid),
+// { ultimoAcesso: serverTimestamp() }) para o campo "Último acesso" da
+// tabela de Utilizadores passar a ser real em vez de ficar sempre "—".
 
 function App() {
     return (
