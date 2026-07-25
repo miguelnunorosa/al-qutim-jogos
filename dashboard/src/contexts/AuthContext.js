@@ -18,7 +18,8 @@ export function AuthProvider({ children }) {
                 try {
                     // Liga a conta de autenticação ao registo em "utilizadores" pelo email
                     // (os registos atuais não têm o uid, foram criados à mão pela dashboard).
-                    const q = query(collection(db, 'utilizadores'), where('email', '==', firebaseUser.email), limit(1));
+                    const emailNormalizado = firebaseUser.email.trim().toLowerCase();
+                    const q = query(collection(db, 'utilizadores'), where('email', '==', emailNormalizado), limit(1));
                     const snapshot = await getDocs(q);
                     if (!snapshot.empty) {
                         const docSnap = snapshot.docs[0];

@@ -42,12 +42,17 @@ export default function Login() {
   // (não bloqueia o login se isto falhar — é só informativo para a dashboard).
   const atualizarUltimoAcesso = async (userEmail) => {
     try {
-      const q = query(collection(db, 'utilizadores'), where('email', '==', userEmail), limit(1));
+      const emailNormalizado = userEmail.trim().toLowerCase();
+      const q = query(collection(db, 'utilizadores'), where('email', '==', emailNormalizado), limit(1));
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
         await updateDoc(doc(db, 'utilizadores', snapshot.docs[0].id), {
           ultimoAcesso: serverTimestamp(),
         });
+      } else {
+        console.warn(
+            `Não existe nenhum registo em "utilizadores" com o email "${emailNormalizado}" — o último acesso não foi atualizado.`
+        );
       }
     } catch (err) {
       console.error('Não foi possível atualizar o último acesso:', err);

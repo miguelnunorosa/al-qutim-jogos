@@ -57,13 +57,14 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             setError('Preenche o nome e o email.');
             return;
         }
+        const emailNormalizado = form.email.trim().toLowerCase();
         setSaving(true);
         setError(null);
         try {
             if (isEdit) {
                 const payload = {
                     nome: form.nome,
-                    email: form.email,
+                    email: emailNormalizado,
                     role: form.role,
                     ativo: form.ativo,
                     dataRegisto: utilizador.dataRegisto,
@@ -73,7 +74,7 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             } else {
                 await addDoc(collection(db, 'utilizadores'), {
                     nome: form.nome,
-                    email: form.email,
+                    email: emailNormalizado,
                     role: form.role,
                     ativo: form.ativo,
                     dataRegisto: serverTimestamp(),
