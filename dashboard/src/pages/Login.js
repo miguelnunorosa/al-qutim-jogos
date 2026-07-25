@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   signInWithEmailAndPassword,
@@ -17,11 +17,13 @@ import {
   Checkbox,
   Alert,
   Link,
+  CircularProgress,
 } from '@mui/material';
 import { auth, db } from '../firebase';
 import logo from '../assets/logo.png';
 import GeometricMark from '../theme/GeometricMark';
 import ForgotPasswordDialog from '../components/ForgotPasswordDialog';
+import { useAuth, ROLES_COM_ACESSO } from '../contexts/AuthContext';
 
 const ERROS_FIREBASE = {
   'auth/invalid-email': 'Email inválido.',
@@ -35,12 +37,23 @@ const ERROS_FIREBASE = {
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, perfil, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState(location.state?.erro ?? '');
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+
+  // Já há sessão válida (ex: veio de um bookmark, ou clicou "Voltar ao
+  // início" na página 404) — salta o formulário e vai direto à dashboard.
+  const temAcesso = user && perfil && ROLES_COM_ACESSO.includes(perfil.role);
+
+  useEffect(() => {
+    if (!authLoading && temAcesso) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, temAcesso, navigate]);
 
   // Atualiza o campo "ultimoAcesso" do registo correspondente em "utilizadores"
   // (não bloqueia o login se isto falhar — é só informativo para a dashboard).
@@ -86,6 +99,24 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  // Enquanto verificamos se já há sessão, ou enquanto o redirect acima está
+  // a acontecer, mostra um spinner em vez de deixar o formulário "piscar".
+  if (authLoading || temAcesso) {
+    return (
+        <Box
+            sx={{
+              minHeight: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'primary.main',
+            }}
+        >
+          <CircularProgress sx={{ color: 'secondary.main' }} />
+        </Box>
+    );
+  }
 
   return (
       <Box

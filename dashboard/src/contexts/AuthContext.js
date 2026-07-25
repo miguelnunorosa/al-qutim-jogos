@@ -5,6 +5,9 @@ import { auth, db } from '../firebase';
 
 const AuthContext = createContext({ user: null, perfil: null, loading: true });
 
+// Roles que têm acesso à dashboard — partilhado entre RequireAuth e Login.
+export const ROLES_COM_ACESSO = ['admin', 'gestor_conteudo'];
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [perfil, setPerfil] = useState(null); // documento correspondente em "utilizadores"

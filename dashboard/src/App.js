@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
 import { AuthProvider } from './contexts/AuthContext';
@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Jogos from './pages/Jogos';
 import Utilizadores from './pages/Utilizadores';
 import Definicoes from './pages/Definicoes';
+import NotFound from './pages/NotFound';
 
 function App() {
     return (
@@ -30,7 +31,7 @@ function App() {
                             </Route>
                         </Route>
 
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route path="*" element={<NotFound />} />
                     </Routes>
                 </BrowserRouter>
             </AuthProvider>

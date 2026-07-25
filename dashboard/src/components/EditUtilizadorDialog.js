@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { doc, addDoc, updateDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, addDoc, updateDoc, deleteDoc, collection, serverTimestamp, query, where, limit, getDocs } from 'firebase/firestore';
 import {
     Dialog,
     DialogTitle,
@@ -60,7 +60,20 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
         const emailNormalizado = form.email.trim().toLowerCase();
         setSaving(true);
         setError(null);
+
         try {
+            // Impede dois utilizadores com o mesmo email — o login e o AuthContext
+            // associam a conta ao perfil por email, e um duplicado tornaria essa
+            // associação imprevisível.
+            const q = query(collection(db, 'utilizadores'), where('email', '==', emailNormalizado), limit(1));
+            const existentes = await getDocs(q);
+            const duplicado = !existentes.empty && existentes.docs[0].id !== utilizador?.id;
+            if (duplicado) {
+                setError('Já existe um utilizador com este email.');
+                setSaving(false);
+                return;
+            }
+
             if (isEdit) {
                 const payload = {
                     nome: form.nome,

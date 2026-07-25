@@ -32,6 +32,7 @@ yarn-error.log*
 *.swo
 
 # OS
+.DS_Store
 Thumbs.db
 
 # Others
