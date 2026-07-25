@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   signInWithEmailAndPassword,
   setPersistence,
@@ -32,10 +32,11 @@ const ERROS_FIREBASE = {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(location.state?.erro ?? '');
   const [loading, setLoading] = useState(false);
 
   // Atualiza o campo "ultimoAcesso" do registo correspondente em "utilizadores"
