@@ -35,12 +35,13 @@ const DRAWER_WIDTH = 264;
 const NAV_ITEMS = [
     { label: 'Início', to: '/dashboard', icon: SpaceDashboardOutlinedIcon },
     { label: 'Jogos', to: '/dashboard/jogos', icon: CasinoOutlinedIcon },
-    { label: 'Utilizadores', to: '/dashboard/utilizadores', icon: GroupOutlinedIcon },
-    { label: 'Definições', to: '/dashboard/definicoes', icon: SettingsOutlinedIcon },
+    { label: 'Utilizadores', to: '/dashboard/utilizadores', icon: GroupOutlinedIcon, roles: ['admin'] },
 ];
 
 function SidebarContent() {
     const location = useLocation();
+    const { perfil } = useAuth();
+    const items = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(perfil?.role));
 
     return (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -64,7 +65,7 @@ function SidebarContent() {
             <Divider sx={{ borderColor: 'rgba(243,239,228,0.08)', mx: 3, mb: 1 }} />
 
             <List sx={{ px: 1, flexGrow: 1 }}>
-                {NAV_ITEMS.map(({ label, to, icon: Icon }) => {
+                {items.map(({ label, to, icon: Icon }) => {
                     const selected =
                         to === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(to);
                     return (
@@ -153,6 +154,17 @@ export default function DashboardLayout() {
                                 </Box>
                             </MenuItem>
                         )}
+                        <MenuItem
+                            onClick={() => {
+                                setMenuAnchor(null);
+                                navigate('/dashboard/definicoes');
+                            }}
+                        >
+                            <MenuListItemIcon>
+                                <SettingsOutlinedIcon fontSize="small" />
+                            </MenuListItemIcon>
+                            Definições
+                        </MenuItem>
                         <MenuItem onClick={handleLogout}>
                             <MenuListItemIcon>
                                 <LogoutIcon fontSize="small" />

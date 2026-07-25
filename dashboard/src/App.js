@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 
 import Login from './pages/Login';
 import RequireAuth from './components/RequireAuth';
+import RequireRole from './components/RequireRole';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Jogos from './pages/Jogos';
@@ -26,7 +27,11 @@ function App() {
                             <Route path="/dashboard" element={<DashboardLayout />}>
                                 <Route index element={<Dashboard />} />
                                 <Route path="jogos" element={<Jogos />} />
-                                <Route path="utilizadores" element={<Utilizadores />} />
+
+                                <Route element={<RequireRole roles={['admin']} />}>
+                                    <Route path="utilizadores" element={<Utilizadores />} />
+                                </Route>
+
                                 <Route path="definicoes" element={<Definicoes />} />
                             </Route>
                         </Route>

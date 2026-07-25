@@ -3,12 +3,20 @@
 ## ✅ Já feito
 
 - `jogos`: escrita só para `admin` / `gestor_conteudo` autenticados (via custom claim `role`)
-- `utilizadores`: leitura só para autenticados; escrita normal só para `admin`;
-  exceção para o campo `ultimoAcesso`, que qualquer autenticado pode atualizar
-  (é o que o Login usa)
+- `utilizadores`: leitura — `admin` lê a coleção toda; `gestor_conteudo` (e
+  qualquer outro autenticado) só lê o **próprio** documento, por email;
+  escrita normal só para `admin`; exceção para o campo `ultimoAcesso`, que
+  qualquer autenticado pode atualizar no seu próprio registo (é o que o
+  Login usa)
 - `RequireAuth` bloqueia quem não tem `role: admin` ou `role: gestor_conteudo`
   (utilizadores com `role: jogador` fazem login mas são expulsos de volta ao "/")
 - Todas as coleções não listadas ficam bloqueadas por omissão
+- Proteção contra auto-bloqueio: ninguém pode mudar a própria função, desativar-se
+  ou apagar-se a si próprio pela dashboard
+- Proteção do último Administrador: não é possível mudar o `role` nem desativar
+  nem apagar o único utilizador com `role: admin` existente no sistema
+- Página "Utilizadores" (e o link no menu) só visível/acessível a `admin` —
+  Gestor de Conteúdo não a vê nem consegue lá entrar pelo URL
 
 ## ⚠️ Manutenção contínua — não esquecer
 
@@ -16,8 +24,8 @@ As regras leem `request.auth.token.role`, que é uma **custom claim** do
 Firebase Auth — não é o mesmo que o campo `role` no documento Firestore.
 Sempre que:
 
-- **crias um novo utilizador** na dashboard **e** lhe crias a conta em
-  Authentication → Users, ou
+- **crias um novo utilizador** na dashboard (já cria a conta em
+  Authentication automaticamente), ou
 - **mudas o `role`** de alguém existente na dashboard,
 
 tens de correr:
@@ -28,6 +36,23 @@ node scripts/syncClaims.js
 
 A pessoa em causa só vê o novo acesso depois de voltar a fazer login (ou
 até 1h depois, quando o token renovar sozinho).
+
+Da mesma forma, **apagar um utilizador** na dashboard só remove o perfil
+no Firestore — a conta de Authentication fica órfã (o browser não pode
+apagar contas de outras pessoas, só a Admin SDK). Depois de apagares
+alguém, corre:
+```bash
+node scripts/removeOrphans.js
+```
+para limpar contas de Authentication sem perfil correspondente.
+
+## 🐛 Bug corrigido (25/07/2026)
+
+A regra de `delete` em `utilizadores` estava a chamar
+`isValidUtilizador(request.resource.data)` — mas num `delete` não existe
+`request.resource` (não se está a escrever nada), por isso a validação
+falhava sempre e o botão "Remover" da dashboard não funcionava. Corrigido
+separando `create` (com validação) de `delete` (só verifica o `role`).
 
 ## Publicar as regras
 

@@ -1,5 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { doc, addDoc, updateDoc, deleteDoc, collection, serverTimestamp, query, where, limit, getDocs } from 'firebase/firestore';
+import {
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    collection,
+    serverTimestamp,
+    query,
+    where,
+    limit,
+    getDocs,
+    getCountFromServer,
+} from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
     Dialog,
     DialogTitle,
@@ -12,10 +25,12 @@ import {
     Switch,
     FormControlLabel,
     Alert,
+    Typography,
 } from '@mui/material';
-import { db } from '../firebase';
+import { db, secondaryAuth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 
-const emptyForm = { nome: '', email: '', role: 'jogador', ativo: true };
+const emptyForm = { nome: '', email: '', role: 'jogador', ativo: true, password: '' };
 
 export const ROLES = {
     admin: 'Administrador',
@@ -23,13 +38,28 @@ export const ROLES = {
     jogador: 'Jogador',
 };
 
+const ERROS_CRIACAO = {
+    'auth/email-already-in-use': 'Já existe uma conta de login com este email.',
+    'auth/invalid-email': 'Email inválido.',
+    'auth/weak-password': 'A palavra-passe tem de ter pelo menos 6 caracteres.',
+};
+
+// Verifica se "utilizador" é atualmente o único com role "admin".
+async function isUltimoAdmin(utilizador) {
+    if (!utilizador || utilizador.role !== 'admin') return false;
+    const snap = await getCountFromServer(query(collection(db, 'utilizadores'), where('role', '==', 'admin')));
+    return snap.data().count <= 1;
+}
+
 // utilizador === null -> modo criação. utilizador === {id, ...} -> modo edição.
 export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
+    const { perfil } = useAuth();
     const [form, setForm] = useState(emptyForm);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
     const isEdit = Boolean(utilizador);
+    const isSelf = isEdit && perfil?.id === utilizador.id;
 
     useEffect(() => {
         if (open) {
@@ -40,6 +70,7 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                         email: utilizador.email ?? '',
                         role: utilizador.role ?? 'jogador',
                         ativo: utilizador.ativo ?? true,
+                        password: '',
                     }
                     : emptyForm
             );
@@ -57,6 +88,11 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             setError('Preenche o nome e o email.');
             return;
         }
+        if (!isEdit && form.password.length < 6) {
+            setError('A palavra-passe inicial tem de ter pelo menos 6 caracteres.');
+            return;
+        }
+
         const emailNormalizado = form.email.trim().toLowerCase();
         setSaving(true);
         setError(null);
@@ -75,6 +111,16 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             }
 
             if (isEdit) {
+                // Protege o último Administrador: não deixa tirar-lhe o role nem
+                // desativá-lo, para nunca ficar ninguém com acesso à dashboard.
+                if (utilizador.role === 'admin' && (form.role !== 'admin' || !form.ativo)) {
+                    if (await isUltimoAdmin(utilizador)) {
+                        setError('Este é o único Administrador — não podes mudar o role nem desativá-lo.');
+                        setSaving(false);
+                        return;
+                    }
+                }
+
                 const payload = {
                     nome: form.nome,
                     email: emailNormalizado,
@@ -85,14 +131,38 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                 if (utilizador.ultimoAcesso) payload.ultimoAcesso = utilizador.ultimoAcesso;
                 await updateDoc(doc(db, 'utilizadores', utilizador.id), payload);
             } else {
-                await addDoc(collection(db, 'utilizadores'), {
-                    nome: form.nome,
-                    email: emailNormalizado,
-                    role: form.role,
-                    ativo: form.ativo,
-                    dataRegisto: serverTimestamp(),
-                    ultimoAcesso: null,
-                });
+                // 1) Cria a conta de login (Authentication) numa instância secundária,
+                //    para não trocar a sessão do admin que está a criar o utilizador.
+                try {
+                    await createUserWithEmailAndPassword(secondaryAuth, emailNormalizado, form.password);
+                } catch (authErr) {
+                    setError(ERROS_CRIACAO[authErr.code] ?? 'Não foi possível criar a conta de login.');
+                    setSaving(false);
+                    return;
+                } finally {
+                    // Limpa a sessão da instância secundária — nunca deve ficar "logada".
+                    await signOut(secondaryAuth).catch(() => {});
+                }
+
+                // 2) Cria o perfil no Firestore. Se isto falhar, a conta de login já
+                //    ficou criada — fica registado no erro para tratar à mão.
+                try {
+                    await addDoc(collection(db, 'utilizadores'), {
+                        nome: form.nome,
+                        email: emailNormalizado,
+                        role: form.role,
+                        ativo: form.ativo,
+                        dataRegisto: serverTimestamp(),
+                        ultimoAcesso: null,
+                    });
+                } catch (firestoreErr) {
+                    console.error('Conta de login criada, mas o perfil no Firestore falhou:', firestoreErr);
+                    setError(
+                        'A conta de login foi criada, mas não foi possível guardar o perfil. Contacta o suporte técnico.'
+                    );
+                    setSaving(false);
+                    return;
+                }
             }
             onClose();
         } catch (err) {
@@ -104,9 +174,16 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
     };
 
     const handleDelete = async () => {
-        if (!window.confirm(`Remover "${form.nome}"? Esta ação não pode ser desfeita.`)) return;
-        setSaving(true);
         setError(null);
+
+        if (await isUltimoAdmin(utilizador)) {
+            setError('Não é possível remover o único Administrador do sistema.');
+            return;
+        }
+
+        if (!window.confirm(`Remover "${form.nome}"? Esta ação não pode ser desfeita.`)) return;
+
+        setSaving(true);
         try {
             await deleteDoc(doc(db, 'utilizadores', utilizador.id));
             onClose();
@@ -125,17 +202,50 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                 <Stack spacing={2} sx={{ mt: 0.5 }}>
                     <TextField label="Nome" value={form.nome} onChange={handleChange('nome')} fullWidth autoFocus />
                     <TextField label="Email" value={form.email} onChange={handleChange('email')} fullWidth />
-                    <TextField label="Função" select value={form.role} onChange={handleChange('role')} fullWidth>
+
+                    {!isEdit && (
+                        <TextField
+                            label="Palavra-passe inicial"
+                            type="password"
+                            value={form.password}
+                            onChange={handleChange('password')}
+                            helperText="Mínimo 6 caracteres. A pessoa pode alterá-la depois com o link de recuperação."
+                            fullWidth
+                        />
+                    )}
+
+                    <TextField
+                        label="Função"
+                        select
+                        value={form.role}
+                        onChange={handleChange('role')}
+                        fullWidth
+                        disabled={isSelf}
+                        helperText={isSelf ? 'Não podes mudar a tua própria função.' : ' '}
+                    >
                         {Object.entries(ROLES).map(([value, label]) => (
                             <MenuItem key={value} value={value}>
                                 {label}
                             </MenuItem>
                         ))}
                     </TextField>
+
                     <FormControlLabel
-                        control={<Switch checked={form.ativo} onChange={handleChange('ativo')} />}
+                        control={<Switch checked={form.ativo} onChange={handleChange('ativo')} disabled={isSelf} />}
                         label="Ativo"
                     />
+                    {isSelf && (
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: -1.5 }}>
+                            Não podes desativar a tua própria conta.
+                        </Typography>
+                    )}
+
+                    {!isEdit && (form.role === 'admin' || form.role === 'gestor_conteudo') && (
+                        <Typography variant="caption" color="text.secondary">
+                            Lembra-te de correr <code>node scripts/syncClaims.js</code> depois de criar, para esta
+                            função ganhar acesso real à dashboard.
+                        </Typography>
+                    )}
                 </Stack>
 
                 {error && (
@@ -146,7 +256,7 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             </DialogContent>
 
             <DialogActions sx={{ px: 3, py: 2 }}>
-                {isEdit && (
+                {isEdit && !isSelf && (
                     <Button onClick={handleDelete} color="error" disabled={saving} sx={{ mr: 'auto' }}>
                         Remover
                     </Button>
