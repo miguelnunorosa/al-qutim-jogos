@@ -62,11 +62,13 @@ A app abre em `http://localhost:11006/` — ecrã de login. Depois de autenticad
 
 1. **Firestore Database** — criado, com as regras de `firestore.rules` publicadas
 2. **Authentication → Sign-in method** — "Email/Password" ativado
-3. **Authentication → Users** — cada pessoa que vai usar a dashboard precisa de:
-    - uma conta aqui (email + palavra-passe), **e**
-    - um documento correspondente (mesmo email) na coleção `utilizadores`, com o
-      `role` certo (`admin` ou `gestor_conteudo` para ter acesso à dashboard)
-    - depois de criar/mudar o `role`, correr `node scripts/syncClaims.js`
+3. **Criar utilizadores** — já é feito direto pela dashboard (botão "Adicionar"
+   em Utilizadores): cria a conta de Authentication **e** o perfil no Firestore
+   de uma vez. Depois de criar (ou de mudar o `role` de alguém), corre:
+   ```bash
+   node scripts/syncClaims.js
+   ```
+   para essa pessoa ganhar acesso real de acordo com o `role`.
 
 Ver `TODO-SEGURANCA.md` para o detalhe de como as regras usam os `role`.
 

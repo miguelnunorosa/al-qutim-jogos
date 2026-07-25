@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { doc, addDoc, updateDoc, deleteDoc, collection, serverTimestamp, query, where, limit, getDocs } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
     Dialog,
     DialogTitle,
@@ -12,15 +13,22 @@ import {
     Switch,
     FormControlLabel,
     Alert,
+    Typography,
 } from '@mui/material';
-import { db } from '../firebase';
+import { db, secondaryAuth } from '../firebase';
 
-const emptyForm = { nome: '', email: '', role: 'jogador', ativo: true };
+const emptyForm = { nome: '', email: '', role: 'jogador', ativo: true, password: '' };
 
 export const ROLES = {
     admin: 'Administrador',
     gestor_conteudo: 'Gestor de Conteúdo',
     jogador: 'Jogador',
+};
+
+const ERROS_CRIACAO = {
+    'auth/email-already-in-use': 'Já existe uma conta de login com este email.',
+    'auth/invalid-email': 'Email inválido.',
+    'auth/weak-password': 'A palavra-passe tem de ter pelo menos 6 caracteres.',
 };
 
 // utilizador === null -> modo criação. utilizador === {id, ...} -> modo edição.
@@ -40,6 +48,7 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                         email: utilizador.email ?? '',
                         role: utilizador.role ?? 'jogador',
                         ativo: utilizador.ativo ?? true,
+                        password: '',
                     }
                     : emptyForm
             );
@@ -57,6 +66,11 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
             setError('Preenche o nome e o email.');
             return;
         }
+        if (!isEdit && form.password.length < 6) {
+            setError('A palavra-passe inicial tem de ter pelo menos 6 caracteres.');
+            return;
+        }
+
         const emailNormalizado = form.email.trim().toLowerCase();
         setSaving(true);
         setError(null);
@@ -85,14 +99,38 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                 if (utilizador.ultimoAcesso) payload.ultimoAcesso = utilizador.ultimoAcesso;
                 await updateDoc(doc(db, 'utilizadores', utilizador.id), payload);
             } else {
-                await addDoc(collection(db, 'utilizadores'), {
-                    nome: form.nome,
-                    email: emailNormalizado,
-                    role: form.role,
-                    ativo: form.ativo,
-                    dataRegisto: serverTimestamp(),
-                    ultimoAcesso: null,
-                });
+                // 1) Cria a conta de login (Authentication) numa instância secundária,
+                //    para não trocar a sessão do admin que está a criar o utilizador.
+                try {
+                    await createUserWithEmailAndPassword(secondaryAuth, emailNormalizado, form.password);
+                } catch (authErr) {
+                    setError(ERROS_CRIACAO[authErr.code] ?? 'Não foi possível criar a conta de login.');
+                    setSaving(false);
+                    return;
+                } finally {
+                    // Limpa a sessão da instância secundária — nunca deve ficar "logada".
+                    await signOut(secondaryAuth).catch(() => {});
+                }
+
+                // 2) Cria o perfil no Firestore. Se isto falhar, a conta de login já
+                //    ficou criada — fica registado no erro para tratar à mão.
+                try {
+                    await addDoc(collection(db, 'utilizadores'), {
+                        nome: form.nome,
+                        email: emailNormalizado,
+                        role: form.role,
+                        ativo: form.ativo,
+                        dataRegisto: serverTimestamp(),
+                        ultimoAcesso: null,
+                    });
+                } catch (firestoreErr) {
+                    console.error('Conta de login criada, mas o perfil no Firestore falhou:', firestoreErr);
+                    setError(
+                        'A conta de login foi criada, mas não foi possível guardar o perfil. Contacta o suporte técnico.'
+                    );
+                    setSaving(false);
+                    return;
+                }
             }
             onClose();
         } catch (err) {
@@ -125,6 +163,18 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                 <Stack spacing={2} sx={{ mt: 0.5 }}>
                     <TextField label="Nome" value={form.nome} onChange={handleChange('nome')} fullWidth autoFocus />
                     <TextField label="Email" value={form.email} onChange={handleChange('email')} fullWidth />
+
+                    {!isEdit && (
+                        <TextField
+                            label="Palavra-passe inicial"
+                            type="password"
+                            value={form.password}
+                            onChange={handleChange('password')}
+                            helperText="Mínimo 6 caracteres. A pessoa pode alterá-la depois com o link de recuperação."
+                            fullWidth
+                        />
+                    )}
+
                     <TextField label="Função" select value={form.role} onChange={handleChange('role')} fullWidth>
                         {Object.entries(ROLES).map(([value, label]) => (
                             <MenuItem key={value} value={value}>
@@ -136,6 +186,13 @@ export default function EditUtilizadorDialog({ utilizador, open, onClose }) {
                         control={<Switch checked={form.ativo} onChange={handleChange('ativo')} />}
                         label="Ativo"
                     />
+
+                    {!isEdit && (form.role === 'admin' || form.role === 'gestor_conteudo') && (
+                        <Typography variant="caption" color="text.secondary">
+                            Lembra-te de correr <code>node scripts/syncClaims.js</code> depois de criar, para esta
+                            função ganhar acesso real à dashboard.
+                        </Typography>
+                    )}
                 </Stack>
 
                 {error && (
