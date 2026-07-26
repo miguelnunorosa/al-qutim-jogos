@@ -11,7 +11,6 @@ import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Jogos from './pages/Jogos';
 import Utilizadores from './pages/Utilizadores';
-import Definicoes from './pages/Definicoes';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -31,8 +30,6 @@ function App() {
                                 <Route element={<RequireRole roles={['admin']} />}>
                                     <Route path="utilizadores" element={<Utilizadores />} />
                                 </Route>
-
-                                <Route path="definicoes" element={<Definicoes />} />
                             </Route>
                         </Route>
 

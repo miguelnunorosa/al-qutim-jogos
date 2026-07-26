@@ -29,6 +29,7 @@ import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import logo from '../assets/logo.png';
 import GeometricMark from '../theme/GeometricMark';
+import ProfileDialog from '../components/ProfileDialog';
 
 const DRAWER_WIDTH = 264;
 
@@ -96,6 +97,7 @@ function SidebarContent() {
 export default function DashboardLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [menuAnchor, setMenuAnchor] = useState(null);
+    const [profileOpen, setProfileOpen] = useState(false);
     const isDesktop = useMediaQuery('(min-width:900px)');
     const navigate = useNavigate();
     const { perfil } = useAuth();
@@ -157,7 +159,7 @@ export default function DashboardLayout() {
                         <MenuItem
                             onClick={() => {
                                 setMenuAnchor(null);
-                                navigate('/dashboard/definicoes');
+                                setProfileOpen(true);
                             }}
                         >
                             <MenuListItemIcon>
@@ -203,6 +205,8 @@ export default function DashboardLayout() {
                     <Outlet />
                 </Box>
             </Box>
+
+            <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
         </Box>
     );
 }
